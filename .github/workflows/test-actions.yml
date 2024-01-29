@@ -1,0 +1,9 @@
+name: Configured Actions
+run-name: Configured Actions Started
+on: [push]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: windows
+    steps:
+      - name: Lizard Runner
+        uses: Uno-Takashi/Lizard-Runner@v3
