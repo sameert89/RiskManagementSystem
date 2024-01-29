@@ -1,54 +1,77 @@
-﻿using System;
+﻿using RiskManagementSourceCode;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 
-// TDS RDS Merger can have awareness about TDS RDS Data
-namespace RiskManagementSourceCode
+public class TDSRDSMerger : IDataArrayMerger<List<TDSDataModel>, List<RDSDataModel>, List<RiskInputDataModel>>
 {
-    public class TDSRDSMerger : IDataArrayMerger<List<TDSDataModel>, List<RDSDataModel>, List<RiskInputDataModel>>
+    public List<RiskInputDataModel> MergeData(List<TDSDataModel> tdsDataArray, List<RDSDataModel> rdsDataArray)
     {
-        public List<RiskInputDataModel> MergeData(List<TDSDataModel> tdsDataArray, List<RDSDataModel> rdsDataArray)
+        ValidateInputArrays(tdsDataArray, rdsDataArray);
+
+        List<RiskInputDataModel> mergedData = new List<RiskInputDataModel>();
+
+        SortDataArrays(tdsDataArray, rdsDataArray);
+
+        for (int i = 0; i < tdsDataArray.Count; i++)
         {
-            if(tdsDataArray.Count != rdsDataArray.Count)
-            {
-                throw new ArgumentException("Expected TDS and RDS Array Sizes to Match");
-            }
-            List<RiskInputDataModel> MergedData = new List<RiskInputDataModel>();
+            RiskInputDataModel mergedCounterpartyDetails = CreateMergedCounterpartyDetails(tdsDataArray[i], rdsDataArray[i]);
+            mergedData.Add(mergedCounterpartyDetails);
+        }
 
-            tdsDataArray.Sort((x, y) => x.CounterPartyID.CompareTo(y.CounterPartyID));
-            rdsDataArray.Sort((x, y) => x.CounterPartyID.CompareTo(y.CounterPartyID));
-            
-            for(int i = 0; i < tdsDataArray.Count; i++)
-            {
-                RiskInputDataModel MergedCounterpartyDetails = new RiskInputDataModel();
-                string id = "";
-                foreach(var property in tdsDataArray[i].GetType().GetProperties())
-                {
-                    if(property.Name == "CounterPartyID")
-                    {
-                        id = property.GetValue(tdsDataArray[i], null) as string;
-                    }
-                    var value = property.GetValue(tdsDataArray[i], null);
-                    property.SetValue(MergedCounterpartyDetails, value, null);
-                }
-                foreach(var property in rdsDataArray[i].GetType().GetProperties())
-                {
-                    if(property.Name == "CounterPartyID")
-                    {
-                        if (id != property.GetValue(rdsDataArray[i], null) as string)
-                        {
-                            throw new ArgumentException($"Error both TDS and RDS Data for CounterpartyID ${id} must exist");
-                        }
-                    }
-                    var value = property.GetValue(rdsDataArray[i], null);
-                    property.SetValue(MergedCounterpartyDetails, value, null);
-                }
-                MergedData.Add(MergedCounterpartyDetails);
-            }
+        return mergedData;
+    }
 
-            return MergedData;
+    private void ValidateInputArrays(List<TDSDataModel> tdsDataArray, List<RDSDataModel> rdsDataArray)
+    {
+        if (tdsDataArray.Count != rdsDataArray.Count)
+        {
+            throw new ArgumentException("Expected TDS and RDS Array Sizes to Match");
+        }
+    }
+
+    private void SortDataArrays(List<TDSDataModel> tdsDataArray, List<RDSDataModel> rdsDataArray)
+    {
+        tdsDataArray.Sort((x, y) => x.CounterPartyID.CompareTo(y.CounterPartyID));
+        rdsDataArray.Sort((x, y) => x.CounterPartyID.CompareTo(y.CounterPartyID));
+    }
+
+    private RiskInputDataModel CreateMergedCounterpartyDetails(TDSDataModel tdsData, RDSDataModel rdsData)
+    {
+        string id = GetCounterPartyID(tdsData, rdsData);
+
+        RiskInputDataModel mergedCounterpartyDetails = new RiskInputDataModel();
+
+        CopyProperties(tdsData, mergedCounterpartyDetails);
+        ValidateCounterPartyID(id, rdsData);
+        CopyProperties(rdsData, mergedCounterpartyDetails);
+
+        return mergedCounterpartyDetails;
+    }
+
+    private string GetCounterPartyID(TDSDataModel tdsData, RDSDataModel rdsData)
+    {
+        string id = tdsData.CounterPartyID;
+        if (id != rdsData.CounterPartyID)
+        {
+            throw new ArgumentException($"Error: TDS and RDS Data for CounterpartyID {id} must exist");
+        }
+        return id;
+    }
+
+    private void CopyProperties(object source, object destination)
+    {
+        foreach (var property in source.GetType().GetProperties())
+        {
+            var value = property.GetValue(source, null);
+            property.SetValue(destination, value, null);
+        }
+    }
+
+    private void ValidateCounterPartyID(string id, RDSDataModel rdsData)
+    {
+        if (id != rdsData.CounterPartyID)
+        {
+            throw new ArgumentException($"Error: TDS and RDS Data for CounterpartyID {id} must exist");
         }
     }
 }
