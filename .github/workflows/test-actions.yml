@@ -1,12 +1,15 @@
-name: Configured Actions
+name: Check Code Complexity
 on:
-  push:
-  
+ push:
+    branches: [ master ]
+ pull_request:
+    branches: [ master ]
 jobs:
-  Preconfigured-GitHub-Actions:
+ check-complexity:
     runs-on: ubuntu-latest
     steps:
-      - name: Lizard Runner
-        uses: Uno-Takashi/Lizard-Runner@v3
-        with:
-            CCN: 3
+    - uses: actions/checkout@v2
+    - name: Install Lizard
+      run: sudo apt-get install python3-pip && pip3 install lizard
+    - name: Check Code Complexity
+      run: lizard -C 3
