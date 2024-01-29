@@ -1,8 +1,9 @@
 name: Configured Actions
-run-name: Configured Actions Started
-on: [push]
+on:
+  push:
+  
 jobs:
- Preconfigured-GitHub-Actions:
+  Preconfigured-GitHub-Actions:
     runs-on: windows-latest
     steps:
       - name: Lizard Runner
