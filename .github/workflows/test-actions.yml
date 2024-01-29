@@ -4,7 +4,9 @@ on:
   
 jobs:
   Preconfigured-GitHub-Actions:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Lizard Runner
         uses: Uno-Takashi/Lizard-Runner@v3
+        with:
+            CCN: 3
